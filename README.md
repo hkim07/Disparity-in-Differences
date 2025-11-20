@@ -1,6 +1,6 @@
 # Disparity-in-Differences
 
-A manuscript introducing this method is available at arXiv.
+The manuscript introducing this method is available at arXiv.
 
 ## Getting Started
 
@@ -27,3 +27,5 @@ Similarly, for the disparity-in-differences backbone, use `extr_disp_in_diffs_ba
 ```python
 bb, th, N, E = Object.extr_disp_in_diffs_backbone(th=0.01)    
 ```
+
+All Jupyter notebooks (named `main_eval1_*.ipynb`) for evaluation use the same code blocks to extract backbones and then merge external information. 
