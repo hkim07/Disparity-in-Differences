@@ -23,4 +23,7 @@ For the disparity filter backbone, use `extr_disp_backbone()`. It returns four o
 ```python
 bb, th, N, E = Object.extr_disp_backbone(th=0.01)    
 ```
-
+Similarly, for the disparity-in-differences backbone, use `extr_disp_in_diffs_backbone()`. 
+```python
+bb, th, N, E = Object.extr_disp_in_diffs_backbone(th=0.01)    
+```
