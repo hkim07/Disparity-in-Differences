@@ -42,4 +42,4 @@ elist = elist.groupby(["citing_sourceid", "cited_sourceid"])["f_ij"].sum().reset
 ```
 
 ### U.S. Airport Network
-Download the 2024 DB1B data from https://www.transtats.bts.gov/DL_SelectFields.aspx?gnoyr_VQ=FLM&QO_fu146_anzr=b4vtv0%20n0q%20Qr56v0n6v10%20f748rB. The selected columns are ['ITIN_ID','SEQ_NUM','COUPONS','YEAR','ORIGIN_AIRPORT_ID','QUARTER','ORIGIN','DEST_AIRPORT_ID','DEST','PASSENGERS']. The master coordinate file is available at https://www.transtats.bts.gov/DL_SelectFields.aspx?gnoyr_VQ=FLL&QO_fu146_anzr=N8vn6v10%20f722146%20gnoyr5. 
+Download the [2024 DB1B data](https://www.transtats.bts.gov/DL_SelectFields.aspx?gnoyr_VQ=FLM&QO_fu146_anzr=b4vtv0%20n0q%20Qr56v0n6v10%20f748rB). The selected columns are ['ITIN_ID','SEQ_NUM','COUPONS','YEAR','ORIGIN_AIRPORT_ID','QUARTER','ORIGIN','DEST_AIRPORT_ID','DEST','PASSENGERS']. The master coordinate file is available at [LINK](https://www.transtats.bts.gov/DL_SelectFields.aspx?gnoyr_VQ=FLL&QO_fu146_anzr=N8vn6v10%20f722146%20gnoyr5).
