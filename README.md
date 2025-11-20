@@ -16,10 +16,10 @@ Object.calc_disp() # Disparity Filter - Calculate alpha values and add them to a
 Object.calc_disp_in_diffs() # Disparity-in-Differences - Calculate alpha values and create a data frame containing calculated values by the method.
 ```
 
-After these lines were executed, you will have two data frames saved under `Object'. These data frames can be accessed by running `Object.elist' or `Object.elist_did'. 
+After these lines were executed, you will have two data frames saved under `Object`. These data frames can be accessed by running `Object.elist` or `Object.elist_did`. 
 
 Now, by using two other methods, you can extract backbones by threshold.
-For the disparity filter backbone, use ```extr_disp_backbone()'''. It returns four outputs: backbone, threshold, number of nodes in the backbone, number of edges in the backbone. For example:
+For the disparity filter backbone, use `extr_disp_backbone()`. It returns four outputs: backbone, threshold, number of nodes in the backbone, number of edges in the backbone. For example:
 ```python
 bb, th, N, E = Object.extr_disp_backbone(th=0.01)    
 ```
