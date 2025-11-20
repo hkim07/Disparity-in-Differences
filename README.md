@@ -29,3 +29,16 @@ bb, th, N, E = Object.extr_disp_in_diffs_backbone(th=0.01)
 ```
 
 All Jupyter notebooks (named `main_eval1_*.ipynb`) for evaluation use the same code blocks to extract backbones and then merge external information. 
+
+## Data
+Due to the data size limit in Github, files over 25 MB were not uploaded to this repository. Please use the following steps to wrangle data. The Python package "pandas" was mainly used. 
+
+### SciSciNet
+Visit https://northwestern-cssi.github.io/sciscinet/ for the original data sets and descriptions. `sciscinet_paperrefs.parquet`, `sciscinet_papersources.parquet`, and `sciscinet_sources.parquet` were used. A journal citaiton network was constructed through the lines below.
+```python
+elist = dat.groupby(["citing_paperid", "citing_sourceid", "cited_sourceid"]).size().reset_index(name="c_ij")
+elist["f_ij"] = elist['c_ij'] / elist.groupby('citing_paperid')['c_ij'].transform('sum')
+elist = elist.groupby(["citing_sourceid", "cited_sourceid"])["f_ij"].sum().reset_index(name="w_ij")
+```
+
+### U.S. Airport Network
