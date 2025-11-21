@@ -1,6 +1,6 @@
 # Disparity-in-Differences
 
-The manuscript introducing this method is available at arXiv.
+The manuscript introducing this method is available at arXiv - https://arxiv.org/abs/2511.16598
 
 ## Getting Started
 
