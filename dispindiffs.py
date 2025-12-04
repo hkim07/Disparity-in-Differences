@@ -4,7 +4,7 @@ from scipy.stats import beta
 from tqdm import tqdm
 
 class DisparityInDifferences:
-    def __init__(self, elist, source="source", target="target", weight="weight", n_samples=10000):
+    def __init__(self, elist, source="source", target="target", weight="weight", n_samples=1000):
         """
         elist: an edgelist in the Polars dataframe format.
         source: the column name for sources
@@ -137,10 +137,10 @@ class DisparityInDifferences:
         did_backbone = []
         for row in tmp.iter_rows(named=True):
             if row["D_ij"]<0:
-                did_backbone.append((row["j"], row["i"], row["D_ij"], row["disp_in_diffs_alpha"]))
+                did_backbone.append((row["j"], row["i"]))
             if row["D_ij"]>=0:
-                did_backbone.append((row["i"], row["j"], row["D_ij"], row["disp_in_diffs_alpha"]))     
-        did_backbone = pl.DataFrame(did_backbone, schema=["source", "target", "disp_in_diffs", "disp_in_diffs_alpha"], orient="row")    
+                did_backbone.append((row["i"], row["j"]))     
+        did_backbone = pl.DataFrame(did_backbone, schema=["source", "target"], orient="row")    
         N = len(set(did_backbone["source"].unique()) | set(did_backbone["target"].unique()))
         E = len(did_backbone)
         return did_backbone, th, N, E
