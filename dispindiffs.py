@@ -4,7 +4,7 @@ from scipy.stats import beta
 from tqdm import tqdm
 
 class DisparityInDifferences:
-    def __init__(self, elist, source="source", target="target", weight="weight", n_samples=1000):
+    def __init__(self, elist, source="source", target="target", weight="weight", n_samples=10000):
         """
         elist: an edgelist in the Polars dataframe format.
         source: the column name for sources
@@ -100,33 +100,15 @@ class DisparityInDifferences:
                 continue
                 
         print("Calculating statistical significance")
-        samples_df = pl.DataFrame({
-            "k_out": list(pre_samples.keys()),
-            "samples": [pre_samples[k].astype("float64").tolist() for k in pre_samples]
-        }).with_columns(pl.col("samples").cast(pl.List(pl.Float64)))
-        del pre_samples
-
-        self.elist_did = (
-            self.elist_did
-            .join(samples_df.rename({"k_out": "k_i_out", "samples": "k_i_samples"}), on="k_i_out", how="left")
-            .join(samples_df.rename({"k_out": "k_j_out", "samples": "k_j_samples"}), on="k_j_out", how="left")
-        )
-        del samples_df        
-        
-        self.elist_did = self.elist_did.with_columns(
-            (pl.col("k_i_samples").list.eval(pl.element()) - pl.col("k_j_samples").list.eval(pl.element())).alias("E_ij")
-        )
-        self.elist_did = self.elist_did.drop(["k_i_samples", "k_j_samples"])
-        self.elist_did = self.elist_did.filter(pl.col("E_ij").is_not_null())
-        
-        self.elist_did = self.elist_did.with_columns(
-            pl.struct(["D_ij", "E_ij"]).map_elements(
-                lambda s: np.mean(np.array(s["E_ij"]) > s["D_ij"]),
-                return_dtype=pl.Float64
-            ).alias("disp_in_diffs_alpha")
-        )
-        self.elist_did = self.elist_did.drop(["E_ij"])
-        
+        sig = []
+        for row in tqdm(self.elist_did.iter_rows(named=True), total=len(self.elist_did)):
+            try:
+                E_ij = pre_samples[row["k_i_out"]] - pre_samples[row["k_j_out"]]
+                alpha = np.mean(row["D_ij"] > E_ij)
+                sig.append(alpha)
+            except:
+                sig.append(None)
+        self.elist_did = self.elist_did.with_columns(pl.Series("disp_in_diffs_alpha", sig))        
         print("Done")
 
     def extr_disp_in_diffs_backbone(self, th=0.05):
