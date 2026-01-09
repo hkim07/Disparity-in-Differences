@@ -18,6 +18,7 @@ class DisparityInDifferences:
         self.n_samples = n_samples
         self.k_out = None
         self.elist_did = None
+        self.elist_nc = None
 
     def preprocessing(self):
         # Rename source, target, and weight columns to "source", "target", and "weight"
@@ -51,12 +52,54 @@ class DisparityInDifferences:
             ((1 - pl.col("p_ij")) ** (pl.col("k_i_out") - 1)).alias("disp_alpha"),
         )
         
-    def extr_disp_backbone(self, th=0.05):
+    def extr_disp_backbone(self, th=0.01):
         disparity_backbone = self.elist.filter(pl.col("disp_alpha")<=th)
         N = len(set(disparity_backbone["source"].unique()) | set(disparity_backbone["target"].unique()))
         E = len(disparity_backbone)
         return disparity_backbone, th, N, E
 
+    def calc_nc(self):
+        ni = self.elist.group_by("source").agg(pl.col("weight").sum().alias("ni."))
+        self.elist_nc = self.elist["source", "target", "weight"].join(ni, on="source")
+        nj = self.elist.group_by("target").agg(pl.col("weight").sum().alias("n.j"))
+        self.elist_nc = self.elist_nc.join(nj, on="target")
+        self.elist_nc = self.elist_nc.with_columns(pl.col("weight").sum().alias("n.."))
+        self.elist_nc = self.elist_nc.with_columns(
+            (pl.col("ni.")*pl.col("n.j")/pl.col("n..")/pl.col("n..")).alias("mean_prior_prob"),
+            (pl.col("n..")/(pl.col("ni.")*pl.col("n.j"))).alias("kappa"),
+            ((1/pl.col("n..")**2)*(pl.col("ni.")*pl.col("n.j")*(pl.col("n..")-pl.col("ni."))*(pl.col("n..")-pl.col("n.j"))
+            /pl.col("n..")**2/(pl.col("n..")-1))).alias("var_prior_prob")
+        )
+        self.elist_nc = self.elist_nc.with_columns(
+            (pl.col("mean_prior_prob")**2/pl.col("var_prior_prob")*(1-pl.col("mean_prior_prob"))-pl.col("mean_prior_prob")).alias("alpha_prior"),
+            ((pl.col("mean_prior_prob")*(1-pl.col("mean_prior_prob"))**2/pl.col("var_prior_prob"))+pl.col("mean_prior_prob")-1).alias("beta_prior")
+        )
+        self.elist_nc = self.elist_nc.with_columns(
+            (pl.col("weight")+pl.col("alpha_prior")).alias("alpha_post"),
+            (pl.col("n..")-pl.col("weight")+pl.col("beta_prior")).alias("beta_post")
+        )
+        self.elist_nc = self.elist_nc.with_columns(
+            (pl.col("alpha_post")/(pl.col("alpha_post")+pl.col("beta_post"))).alias("expected_pij")    
+        )
+        self.elist_nc = self.elist_nc.with_columns(
+            (pl.col("expected_pij")*(1-pl.col("expected_pij"))*pl.col("n..")).alias("variance_nij"),
+            ((1/pl.col("ni.")/pl.col("n.j"))-(pl.col("n..")*(pl.col("ni.")+pl.col("n.j"))/(pl.col("ni.")*pl.col("n.j"))**2)).alias("d")
+        )
+        self.elist_nc = self.elist_nc.with_columns(
+            (pl.col("variance_nij") * ((2*(pl.col("kappa")+pl.col("weight")*pl.col("d"))/((pl.col("kappa")*pl.col("weight")+1)**2)))**2).alias("variance_cij")
+        )
+        self.elist_nc = self.elist_nc.with_columns(
+            ((pl.col("kappa")*pl.col("weight")-1)/(pl.col("kappa")*pl.col("weight")+1)).alias("score"),
+            (pl.col("variance_cij")**0.5).alias("sdev_cij")
+        )
+
+    def extr_nc_backbone(self, delta=2.32):
+        # delta=2.32 roughly corresponds to p=0.01 according to the original paper
+        nc_backbone = self.elist_nc.filter((pl.col("score")/pl.col("sdev_cij"))>=delta)
+        N = len(set(nc_backbone["source"].unique()) | set(nc_backbone["target"].unique()))
+        E = len(nc_backbone)
+        return nc_backbone, delta, N, E 
+        
     def calc_disp_in_diffs(self):
         if "p_ij" not in self.elist.columns:
             self.preprocessing()
@@ -111,7 +154,7 @@ class DisparityInDifferences:
         self.elist_did = self.elist_did.with_columns(pl.Series("disp_in_diffs_alpha", sig))        
         print("Done")
 
-    def extr_disp_in_diffs_backbone(self, th=0.05):
+    def extr_disp_in_diffs_backbone(self, th=0.01):
         """
         th/2 will be applied to each side
         """
